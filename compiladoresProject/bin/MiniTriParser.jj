@@ -1,0 +1,220 @@
+/**
+ * JavaCC file for Mini-Triângulo
+ */
+
+// Seção de opções de geração do analisador léxico (AL) e sintático (AS)
+options {
+  LOOKAHEAD=2;
+}
+
+/**
+    Código Java necessário para gerar os arquivos miniTrianguloParser.java
+    (correspondente ao AS) e miniTrianguloParserTokenManager.java (correspondente ao AL)
+ */
+
+PARSER_BEGIN(miniTrianguloParser)
+
+public class miniTrianguloParser {
+    
+  public static void main(String args[]) throws ParseException
+    {
+        miniTrianguloParser parser = new miniTrianguloParser(System.in);
+        while (true)
+        { 
+        	parser.programa();
+        }
+    }
+}
+
+PARSER_END(miniTrianguloParser)
+
+// Definição dos caracteres que devem ser ignorados (espaços, quebras de linha, etc.)
+SKIP :
+{
+ 	" "
+|	"\r"
+|	"\t"
+|	"\n"
+}
+
+// Tokens que representam operadores na linguagem Mini-Triângulo
+
+TOKEN : /* OPERATORS */
+{
+	< ASSIGN: ":=" >    // Atribuição
+|	< PLUS: "+" >       // Adição
+|	< MINUS: "-" >      // Subtração
+|	< MULTIPLY: "*" >   // Multiplicação
+|	< DIVIDE: "/" >     // Divisão
+|   < EQ: "=" >         // Igualdade
+|   < GT: ">" >         // Maior que
+|   < LT: "<" >         // Menor que
+|   < LE: "<=" >        // Menor ou igual
+|   < GE: ">=" >        // Maior ou igual
+|   < NE: "!=" >        // Desigualdade
+|   < AND: "and" >      // E lógico
+|   < OR: "or" >        // OU lógico
+|   < NOT: "not" >      // Negação lógica
+}
+
+/* SÍMBOLOS ESPECIAIS */
+
+TOKEN :
+{
+  < LPAREN: "(" >         // Parênteses esquerdo
+| < RPAREN: ")" >         // Parênteses direito
+| < SEMICOLON: ";" >			// Ponto e vírgula
+| < COLON: ":" >			//dois pontos
+| < COMMA: "," >          // Vírgula
+| < DOT: "." >            // Ponto
+| < LBRACE: "{" >         // Chave esquerda
+| < RBRACE: "}" >         // Chave direita
+| < LBRACKET: "[" >       // Colchete esquerdo
+| < RBRACKET: "]" >       // Colchete direito
+}
+
+// Elementos léxicos da linguagem Mini-Triângulo
+
+TOKEN :
+{
+  < LETRA: ["a"-"z", "A"-"Z"] >
+| < DIGITO: ["0"-"9"] >
+}
+
+// Palavras reservadas da linguagem Mini-Triângulo
+
+TOKEN :
+{
+  < IF: "if" > 
+| < THEN: "then" > 
+| < ELSE: "else" > 
+| < WHILE: "while" > 
+| < DO: "do" > 
+| < VAR: "var" > 
+| < INTEGER: "integer" > 
+| < BOOLEAN: "boolean" > 
+| < TRUE: "true" > 
+| < FALSE: "false" > 
+| < BEGIN: "begin" > 
+| < END: "end" >
+| < PROGRAM: "program" >
+}
+
+/** Definição da gramática da Mini-Triângulo.
+ * Cada símbolo não-terminal é escrito na forma de métodos.
+ */
+
+void programa() : {}
+{   
+   <PROGRAM> id() <SEMICOLON> (declaracoes() | vazio()) comando_composto() <DOT>
+}
+
+void declaracoes() : {}
+{
+  declaracao()(<SEMICOLON> declaracao())*
+}
+
+void declaracao() : {}
+{
+  declaracao_variavel()
+}
+
+void declaracao_variavel() : {}
+{
+  <VAR> lista_ids() <COLON> tipo()
+} 
+
+void lista_ids() : {}
+{
+	id() (<COMMA> id())*
+}
+
+void comando_composto() : {}
+{
+    <BEGIN> (lista_comandos() | vazio()) <END> 
+}
+
+void lista_comandos() : {}
+{
+    comando() (<SEMICOLON> comando())*
+}
+
+void comando() : {}
+{
+   LOOKAHEAD(2) atribuicao() | comando_condicional() | comando_iterativo()
+}
+
+void comando_condicional() : {}
+{
+	<IF> expressao() <THEN> comando() (<ELSE> comando())?
+}
+
+void comando_iterativo() : {}
+{
+	<WHILE> expressao() <DO> comando()
+}
+
+void atribuicao() : {}
+{
+    id() <ASSIGN> expressao()
+}
+
+void expressao() : {}
+{
+    expressao_simples() (op_relacional() expressao_simples())?
+}
+
+void expressao_simples() : {}
+{
+    termo() (op_aditivo() termo())*
+}
+
+void termo() : {}
+{
+    fator() (op_multiplicativo() fator())*
+}
+
+void fator() : {}
+{
+    id() | LOOKAHEAD(2) <LPAREN> (LOOKAHEAD(2) expressao() | /*<VAZIO>*/ vazio()) <RPAREN> | literal()
+}
+
+void op_relacional() : {}
+{
+    <EQ> | <GT> | <LT> | <LE> | <GE> | <NE>
+}
+
+void op_aditivo() : {}
+{
+    <PLUS> | <MINUS> | <OR>
+}
+
+void op_multiplicativo() : {}
+{
+    <MULTIPLY> | <DIVIDE> | <AND>
+}
+
+void literal() : {}
+{
+    <TRUE> | <FALSE> | numero()
+}
+
+void numero() : {}
+{
+    <DIGITO> (<DIGITO>)*
+}
+
+void id() : {}
+{
+    <LETRA> (<LETRA> | <DIGITO>)*
+}
+
+void tipo() : {}
+{
+	<INTEGER> | <BOOLEAN>
+}
+
+void vazio() : {}
+{
+    {}
+}

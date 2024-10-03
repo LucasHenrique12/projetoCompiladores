@@ -1,0 +1,363 @@
+/**
+ * JavaCC file
+ */
+ 
+ // Essa seção determina alguns parâmetros para geração do AL e AS 
+
+options {
+  LOOKAHEAD=2;
+}
+
+/**
+    Todo código Java deve estar aqui. Vai ser gerado os arquivos toyParser.java
+    que corresponde ao AS e o toyParserTokenManager.java que corresponde ao AL 
+ */
+
+PARSER_BEGIN(toyParser)
+
+
+public class toyParser {
+    
+  public static void main(String args[]) throws ParseException
+    {
+        toyParser parser = new toyParser(System.in);
+        while (true)
+        { 
+        	parser.programa();
+           
+        }
+    }
+}
+
+PARSER_END(toyParser)
+
+// Essa seção define os caracteres que devem ser despresados
+
+SKIP :
+{
+ 	" "
+|	"\r"
+|	"\t"
+|	"\n"
+}
+
+// Tokens que representam operadores na linguagem toy
+
+TOKEN : /* OPERATORS */
+{
+	< ASSIGN: ":=" >
+|	< PLUS: "+" >
+|	< MINUS: "-" >
+|	< MULTIPLY: "*" >
+|	< DIVIDE: "/" >
+|   < EQ: "=" >
+|   < GT: ">" >
+|   < LT: "<" >
+|   < LE: "<=" >
+|   < GE: ">=" >
+|   < NE: "<>" >
+|   < MOD: "mod">
+|   < AND: "and">
+}
+
+/* SÍMBOLOS ESPECIAIS */
+
+TOKEN :
+{
+  < LPAREN: "(" >
+| < RPAREN: ")" >
+| < COLON: ":" >
+| < SEMICOLON: ";" >
+| < COMMA: "," >
+| < DOT: "." >
+| < LBRACE: "{">
+| < RBRACE: "}">
+| < LBRACKET: "[">
+| < RBRACKET: "]">
+| < QUOTES: "'">
+
+} 
+
+// Elementos Léxicos da Linguagem Toy 
+
+TOKEN :
+{
+
+    //< VAZIO: "">
+      < QUALQUER_CARACTER:
+      "'"((~["'","\\","\n","\r"]))"'">
+|     < SEQUANCIA_CARACTER_EXCETO_RBRACE:
+      "'"((~["'","\\","\n","\r","}"]))"'">
+      
+|   < LETRA: ["a"-"z","A"-"Z"]>
+|   < DIGITO: ["0"-"9"]>
+
+
+}
+
+// Palavras reservadas da linguagem toy
+
+TOKEN :
+{
+	
+  < PROGRAM: "program" >  
+| < BEGIN: "begin" >
+| < IF: "if" >
+| < THEN: "then" > 
+| < ELSE: "else" > 
+| < WHILE: "while" > 
+| < DO: "do" > 
+| < VAR: "var" > 
+| < INTEGER: "integer" > 
+| < BOOLEAN: "boolean" >
+| < FALSE: "false" >
+| < TRUE: "true" > 
+| < END: "end" >
+| < STATIC: "static">
+| < CONST: "const">
+| < REPEAT: "repeat">
+| < UNTIL: "until">
+| < FOR: "for">
+| < TO: "to">
+| < STEP: "step">
+| < RETURN: "return">
+| < FLOAT: "float">
+| < CHAR: "char">
+| < ARRAY: "array">
+| < OF: "of">
+| < PROCEDURE: "procedure">
+| < FUNCTION: "function">
+| < REF: "ref">
+| < VALUE: "value">
+| < NOT: "not">
+| < OR: "or">
+
+}
+/** Aqui começa a definição da gramática da Toy.
+ * Cada símbolo não-terminal é escrito na notação de um método.
+ */
+
+void programa() : {}
+{   
+   <PROGRAM> id() <SEMICOLON> (declaracoes() | /*<VAZIO>*/ vazio()) comando_composto() <DOT>
+}
+
+void declaracoes() :{}
+{
+  declaracao()(<SEMICOLON> declaracao() | declaracao())*
+}
+	
+void declaracao() : {}
+{
+  declaracao_variavel() | declaracao_constante() | declaracao_procedimento() | declaracao_funcao()
+}
+
+void declaracao_variavel() : {}
+{
+  <VAR> lista_ids() <COLON> alocacao() tipo()
+} 
+
+void alocacao() : {}
+{
+  <STATIC> | /*<VAZIO>*/ vazio()
+}
+
+void declaracao_constante() : {}
+{
+	<CONST> lista_ids() <EQ> expressao()
+}
+
+void lista_ids() : {}
+{
+	id()(<COMMA> id())*
+}
+
+void comando_composto() : {}
+{
+    <BEGIN> (lista_comandos() | /*<VAZIO>*/vazio()) <END> 
+}
+
+void lista_comandos() : {}
+{
+    comando()( <SEMICOLON> comando())* 
+}
+
+void comando() : {}
+{
+    comando_composto() | comando_condicional() | comando_iterativo() | LOOKAHEAD(2) atribuicao() | LOOKAHEAD(2) chamada_procedimento() | chamada_funcao() | retorno_funcao()
+}
+
+
+
+void comando_condicional() : {}
+{
+	<IF> expressao() <THEN> comando()( /*<VAZIO>*/vazio() | <ELSE> comando())
+}
+
+void comando_iterativo() : {}
+{
+	<WHILE> expressao() <DO> comando()|
+	<REPEAT> lista_comandos() <UNTIL> expressao()|
+	<FOR> nome() <ASSIGN> expressao() <TO> expressao()|
+	<STEP> expressao() <DO> comando()
+}
+
+void atribuicao() : {}
+{
+    nome() <ASSIGN> expressao()	
+}
+
+void chamada_procedimento() : {}
+{
+   id() <LPAREN> (LOOKAHEAD(2) lista_expressoes() | /*<VAZIO>*/ vazio()) <RPAREN>	
+	
+}
+
+void chamada_funcao() : {}
+{
+	id() <LPAREN> (LOOKAHEAD(2) lista_expressoes() | /*<VAZIO>*/ vazio()) <RPAREN>
+}
+
+void retorno_funcao() : {}
+{
+	<RETURN> <LPAREN> expressao() <RPAREN>
+}
+
+void tipo() : {}
+{
+	tipo_simples() | tipo_agregado()
+}
+
+void tipo_simples() : {}
+{
+	<FLOAT> | <INTEGER> | <BOOLEAN> | <CHAR>
+}
+
+void tipo_agregado() : {}
+{
+	agregado_homogeneo()
+}
+
+void agregado_homogeneo() : {}
+{
+	<ARRAY> <LBRACKET> expressao() <RBRACKET> <OF> tipo() 
+}
+
+void lista_campos_mesmo_tipo() : {}
+{
+	lista_ids() <COLON> tipo() 
+}
+
+void lista_expressoes() : {}
+{
+	expressao()(<COMMA> expressao())* 
+}
+
+void declaracao_procedimento() : {}
+{
+   <PROCEDURE> id() <LPAREN> (LOOKAHEAD(2) parametros() | /*<VAZIO>*/ vazio()) <RPAREN> <SEMICOLON> (declaracoes() | /*<VAZIO>*/ vazio() ) comando_composto()	
+}
+
+void declaracao_funcao() : {}
+{
+   <FUNCTION> id() <LPAREN> (LOOKAHEAD(2) parametros() | /*<VAZIO>*/ vazio()) <RPAREN> <COLON> tipo_simples() <SEMICOLON> (declaracoes() | /*<VAZIO>*/vazio()) comando_composto()	
+}
+
+void parametros() : {}
+{
+	lista_campos_qualificados()(<SEMICOLON> lista_campos_qualificados())*
+}
+
+void lista_campos_qualificados() : {}
+{
+	(<REF> | <VALUE> | /*<VAZIO>*/ vazio()) lista_campos_mesmo_tipo()  
+}
+
+void expressao() : {}
+{
+	expressao_simples()(op_relacional()expressao_simples() | /*<VAZIO>*/ vazio()) 
+}
+
+void expressao_simples() : {}
+{
+	op_unario() termo()(op_aditivo() termo())* 
+}
+
+void termo() : {}
+{
+	fator() (op_multiplicativo() fator())*
+}
+
+void fator() : {}
+{
+    id()(<LBRACKET> expressao() <RBRACKET>)* | LOOKAHEAD(2) <LPAREN> (LOOKAHEAD(2) lista_expressoes() | /*<VAZIO>*/ vazio()) <RPAREN>  | literal() | <NOT> fator() | <LPAREN> expressao() <RPAREN>
+}
+
+void nome() : {}
+{
+    id() (<LBRACKET> expressao() <RBRACKET>)*
+}
+
+void op_relacional() : {}
+{
+
+    <EQ> | <GT> | <LT> | <LE> | <GE> | <NE>  
+}
+
+void op_aditivo() : {}
+{
+   	<PLUS> | <MINUS> | <OR>  
+}
+
+void op_multiplicativo() : {}
+{
+   	<MULTIPLY> | <DIVIDE> | <MOD> | <AND>
+}
+
+void op_unario() : {}
+{
+   <PLUS> | <MINUS> | /*<VAZIO>*/ vazio()
+}
+
+void literal() : {}
+{
+   	LOOKAHEAD(2) numero_inteiro() | numero_float() | <TRUE> | <FALSE> | caracter() 
+}
+
+void caracter() : {}
+{
+   	 <QUOTES> <QUALQUER_CARACTER> <QUOTES>
+   	
+}
+
+void id() : {}
+{
+   <LETRA> (<LETRA> | <DIGITO>)*
+}
+
+void numero_inteiro() : {}
+{
+   	<DIGITO> (<DIGITO>)*
+}
+
+void numero_float() : {}
+{
+   	numero_inteiro() <DOT> (numero_inteiro() | /*<VAZIO>*/ vazio()) | <DOT> numero_inteiro()
+}
+
+void comentario() : {}
+{
+	<LBRACE> < SEQUANCIA_CARACTER_EXCETO_RBRACE> <RBRACE>
+}
+
+void vazio():{}
+{
+	  <LBRACE> <RBRACE>
+}
+
+
+
+
+
+
+
